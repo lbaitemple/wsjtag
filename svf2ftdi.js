@@ -4,7 +4,8 @@
 // const tty = require('tty');
 const fs = require('fs');
 const path = require('path');
-// const http = require('http');
+const readLine = require('readline');
+const http = require('http');
 const yargs = require('yargs');
 const request = require('request');
 const svf = require('./lib/svf-stream');
@@ -80,13 +81,42 @@ if (process.stdin.isTTY) {
     source = process.stdin.setEncoding('ascii');
 }
 
+const { Readable } = require('stream');
+
+/**
+ * @param binary Buffer
+ * returns readableInstanceStream Readable
+ */
+function bufferToStream(binary) {
+
+    const readableInstanceStream = new Readable({
+        read() {
+            this.push(binary);
+            this.push(null);
+        }
+    });
+
+    return readableInstanceStream;
+}
+
 if (source) {
-    //console.log(options);
     const jtag = ftdi(options);
     const s1 = svf(jtag);
-    //console.log(s1);
-    source.pipe(s1).pipe(process.stdout);
-   // console.log("done");
+
+    source.on('data', chunk => {
+        let rs = bufferToStream(chunk);
+        rs.pipe(s1);
+    });
+
+    //on('data', (chunk) => {
+    //    s1;
+    //}); //.pipe(process.stdout);
+    /**source.pipe(s1).on('line', function(line) {
+       console.log(line);
+    });*/
+
+        //.pipe(s1);
+    // console.log("done");
 } else {
     yargs.showHelp();
 }
