@@ -17,5 +17,5 @@ npm install @drom/eslint-config eslint mocha nyc
 
 TO run
 ```
-node  svf2ftdi.js  -p -f lab1_top.svf 
+node  svf2ftdi.js -n 91d28408 -p -f lab1_top.svf 
 ```
