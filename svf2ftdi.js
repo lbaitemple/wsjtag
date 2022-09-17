@@ -86,18 +86,7 @@ const { Readable } = require('stream');
 if (source) {
     const jtag = ftdi(options);
     const s1 = svf(jtag);
-
-    source.pipe(s1)
-
-    //on('data', (chunk) => {
-    //    s1;
-    //}); //.pipe(process.stdout);
-    /**source.pipe(s1).on('line', function(line) {
-       console.log(line);
-    });*/
-
-        //.pipe(s1);
-    // console.log("done");
+    source.pipe(s1);
 } else {
     yargs.showHelp();
 }
