@@ -1,5 +1,6 @@
 #!/usr/bin/env node
 'use strict';
+//import { Buffer } from 'node:buffer';
 
 // const tty = require('tty');
 const fs = require('fs');
@@ -9,7 +10,57 @@ const http = require('http');
 const yargs = require('yargs');
 const request = require('request');
 const svf = require('./lib/svf-stream');
-const ftdi = require('./lib/ftdi-libusb');
+
+const usb = require('usb');
+const vendorId = 0x09fb;
+const productId = 0x6001;
+
+function initialize_usb_blaster()  {
+    /**
+     *
+    const devices = usb.getDeviceList();
+    let match = devices.find((device) => device.deviceDescriptor.idVendor.toString(16) === "9fb" && device.deviceDescriptor.idProduct.toString(16) === "6001")
+    if (match)
+        console.log("Required USB device found: Vendor 0x09fb Product 0x6001");
+    else
+        throw new Error("Required USB device not found: Vendor 0x09fb Product 0x6001");
+     *
+    **/
+
+    let device = usb.findByIds(vendorId, productId);
+    if (!device) {
+        throw new Error('FTDI JTAG device not found: Vendor 0x' + vendorId.toString(16) + ' Product 0x' + productId.toString(16));
+    } else {
+        console.log('FTDI JTAG device found: Vendor 0x' + vendorId.toString(16) + ' Product 0x' + productId.toString(16));
+    }
+
+    device.open();
+
+    let iface = device.interfaces[0];
+    iface.claim();
+
+    let dataToSend = Buffer.from([0x00, 0x00, 0x00]);
+
+    let endpoint = iface.endpoint(0);
+    for (const ep of iface.endpoints) {
+        if (ep.direction === 'out') {
+            endpoint = ep;
+            break;
+        }
+    }
+
+    endpoint.transfer(dataToSend, (error) => {
+        if (error) {
+            console.error('Error sending data: ', error);
+        } else {
+            console.log('Data sent successfully.');
+        }
+
+        // Release the interface and close the device
+        iface.release();
+        device.close();
+    });
+}
 
 const options = yargs
     .option('file', {
@@ -54,6 +105,7 @@ const options = yargs
     .argv;
 
 let source;
+initialize_usb_blaster();
 
 if (options.file) {
     const fileName = path.resolve(process.cwd(), options.file);
